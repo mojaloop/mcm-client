@@ -12,13 +12,34 @@ import { assign, send, MachineConfig, DoneEventObject } from 'xstate';
 import { MachineOpts } from './MachineOpts';
 import { invokeRetry } from './invokeRetry';
 
+/**
+ * Namespace for DFSP JWS state machine logic.
+ *
+ * @remarks
+ * This namespace defines types and a state machine configuration for managing
+ * the lifecycle of DFSP JWS (JSON Web Signature) keys, including creation,
+ * rotation, and propagation to the hub.
+ *
+ * The state machine consists of the following states:
+ * - `idle`: Waits for the rotation interval before transitioning to `creating`.
+ * - `creating`: Handles JWS key creation and updates the context with new key data.
+ * - `uploadingToHub`: Uploads the public key to the hub and signals propagation.
+ *
+ * @param opts - Options for configuring the state machine, including rotation interval,
+ * logger, vault service, and certificate model.
+ *
+ * @type Context - The context object containing the current DFSP JWS key data.
+ * @type Event - The union of possible events handled by the state machine.
+ * @function createState - Returns the state machine configuration.
+ *
+ */
 export namespace DfspJWS {
   export type Context = {
     dfspJWS?: {
       publicKey: string;
       privateKey: string;
       createdAt: number;
-      jwsRotationIntervalMs: number;
+      rotatesAt: number;
     };
   };
 
@@ -38,9 +59,22 @@ export namespace DfspJWS {
     },
     states: {
       idle: {
-        after: {
-          [opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000]: { target: 'creating' }
-        },
+        after: [
+          {
+            // Wait until rotatesAt, then transition to creating
+            delay: (ctx: TContext) => {
+              if (ctx.dfspJWS) {
+                const now = Date.now();
+                const delayMs = ctx.dfspJWS.rotatesAt - now;
+                // If rotatesAt is in the past, rotate immediately
+                return Math.max(delayMs, 0);
+              }
+              // Fallback to default interval if no JWS exists
+              return opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000;
+            },
+            target: 'creating'
+          }
+        ]
       },
       creating: {
         entry: send('CREATING_DFSP_JWS'),
@@ -59,10 +93,14 @@ export namespace DfspJWS {
             target: 'uploadingToHub',
             actions: [
               assign({
-                dfspJWS: (context, event) => ({
-                  ...event.data,
-                  jwsRotationIntervalMs: opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000,
-                })
+                dfspJWS: (context, event) => {
+                  const jwsRotationIntervalMs = opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000;
+                  const createdAt = event.data.createdAt;
+                  return {
+                    ...event.data,
+                    rotatesAt: createdAt + jwsRotationIntervalMs,
+                  };
+                }
               }),
               send((ctx) => ({
                 type: 'UPDATE_CONNECTOR_CONFIG',

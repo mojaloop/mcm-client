@@ -72,7 +72,7 @@ describe('DfspJWS', () => {
   });
 
   test('should rotate JWS on ROTATE_JWS event', async () => {
-    let createdAt = Math.floor(Date.now() / 1000);
+    let createdAt = Date.now();
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY', privateKey: 'JWS PRIVKEY', createdAt }));
 
     const configUpdate = jest.fn();
@@ -81,7 +81,7 @@ describe('DfspJWS', () => {
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     // Trigger rotation
-    createdAt = Math.floor(Date.now() / 1000);
+    createdAt = Date.now();
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY ROTATED', privateKey: 'JWS PRIVKEY ROTATED', createdAt }));
 
     service.send({ type: 'ROTATE_JWS' });
@@ -99,7 +99,7 @@ describe('DfspJWS', () => {
     // Set a short rotation interval for testing
     opts.jwsRotationIntervalMs = 100;
 
-    let createdAt = Math.floor(Date.now() / 1000);
+    let createdAt = Date.now();
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY', privateKey: 'JWS PRIVKEY', createdAt }));
 
     const configUpdate = jest.fn();
@@ -108,7 +108,7 @@ describe('DfspJWS', () => {
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     // Wait for automatic rotation
-    createdAt = Math.floor(Date.now() / 1000);
+    createdAt = Date.now();
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY AUTO', privateKey: 'JWS PRIVKEY AUTO', createdAt }));
 
     await waitFor(service, (state) => state.matches('creatingJWS.creating'), { timeout: 200 });
