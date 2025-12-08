@@ -439,7 +439,6 @@ export default class Vault {
     );
   }
 
-
   createCSR(csrParameters?: CsrParams) {
     const keys = forge.pki.rsa.generateKeyPair(this.cfg.keyLength);
     const csr = forge.pki.createCertificationRequest();
@@ -506,8 +505,7 @@ export default class Vault {
   /**
    * Performs a health check on the Vault server by sending a GET request to the `/sys/health` endpoint.
    *
-   * @returns {Promise<any>} The response from the Vault health endpoint if successful, or an object with `{ status: 'DOWN' }` if the request fails.
-   * @throws Will log a warning if the health check fails.
+   * @returns {Promise<any>} The response from the Vault health endpoint if successful, or an object with `{ status: 'DOWN' }` if the request fails. A warning will be logged if the health check fails.
    */
   async healthCheck() {
     assert(this.client);
