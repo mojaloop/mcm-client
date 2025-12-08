@@ -18,7 +18,7 @@ export namespace DfspJWS {
       publicKey: string;
       privateKey: string;
       createdAt: number;
-      rotatesAt: number;
+      jwsRotationIntervalMs: number;
     };
   };
 
