@@ -488,7 +488,7 @@ export default class Vault {
    * @returns An object containing:
    * - `publicKey`: The RSA public key in PEM format.
    * - `privateKey`: The RSA private key in PEM format.
-   * - `createdAt`: The Unix timestamp (in seconds) when the key pair was created.
+   * - `createdAt`: The timestamp in seconds since Unix epoch (January 1, 1970 UTC) when the key pair was created.
    *
    * @remarks
    * The key length is determined by the `keyLength` property in the configuration (`this.cfg.keyLength`).

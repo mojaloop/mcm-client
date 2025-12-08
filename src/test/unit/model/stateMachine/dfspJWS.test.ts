@@ -48,7 +48,11 @@ describe('DfspJWS', () => {
 
   test('should create JWS and upload it', async () => {
     let createdAt = Math.floor(Date.now() / 1000);
-    opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY', privateKey: 'JWS PRIVKEY', createdAt }));
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY',
+      privateKey: 'JWS PRIVKEY',
+      createdAt,
+    }));
 
     const configUpdate = jest.fn();
     const service = startMachine(opts, configUpdate);
@@ -56,24 +60,38 @@ describe('DfspJWS', () => {
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     expect(opts.vault.createJWS).toHaveBeenCalled();
-    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({ publicKey: 'JWS PUBKEY', createdAt });
+    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({
+      publicKey: 'JWS PUBKEY',
+      createdAt,
+    });
     expect(configUpdate).toHaveBeenCalledWith({ jwsSigningKey: 'JWS PRIVKEY' });
 
     // recreate JWS
     createdAt = Math.floor(Date.now() / 1000);
-    opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY NEW', privateKey: 'JWS PRIVKEY NEW', createdAt }));
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY NEW',
+      privateKey: 'JWS PRIVKEY NEW',
+      createdAt,
+    }));
     service.send({ type: 'CREATE_JWS' });
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
     expect(opts.vault.createJWS).toHaveBeenCalledTimes(2);
-    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({ publicKey: 'JWS PUBKEY NEW', createdAt });
+    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({
+      publicKey: 'JWS PUBKEY NEW',
+      createdAt,
+    });
     expect(configUpdate).toHaveBeenCalledWith({ jwsSigningKey: 'JWS PRIVKEY NEW' });
 
     service.stop();
   });
 
   test('should rotate JWS on ROTATE_JWS event', async () => {
-    let createdAt = Date.now();
-    opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY', privateKey: 'JWS PRIVKEY', createdAt }));
+    let createdAt = Math.floor(Date.now() / 1000);
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY',
+      privateKey: 'JWS PRIVKEY',
+      createdAt,
+    }));
 
     const configUpdate = jest.fn();
     const service = startMachine(opts, configUpdate);
@@ -81,15 +99,22 @@ describe('DfspJWS', () => {
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     // Trigger rotation
-    createdAt = Date.now();
-    opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY ROTATED', privateKey: 'JWS PRIVKEY ROTATED', createdAt }));
+    createdAt = Math.floor(Date.now() / 1000);
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY ROTATED',
+      privateKey: 'JWS PRIVKEY ROTATED',
+      createdAt,
+    }));
 
     service.send({ type: 'ROTATE_JWS' });
 
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     expect(opts.vault.createJWS).toHaveBeenCalledTimes(2);
-    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({ publicKey: 'JWS PUBKEY ROTATED', createdAt });
+    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({
+      publicKey: 'JWS PUBKEY ROTATED',
+      createdAt,
+    });
     expect(configUpdate).toHaveBeenLastCalledWith({ jwsSigningKey: 'JWS PRIVKEY ROTATED' });
 
     service.stop();
@@ -99,8 +124,12 @@ describe('DfspJWS', () => {
     // Set a short rotation interval for testing
     opts.jwsRotationIntervalMs = 100;
 
-    let createdAt = Date.now();
-    opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY', privateKey: 'JWS PRIVKEY', createdAt }));
+    let createdAt = Math.floor(Date.now() / 1000);
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY',
+      privateKey: 'JWS PRIVKEY',
+      createdAt,
+    }));
 
     const configUpdate = jest.fn();
     const service = startMachine(opts, configUpdate);
@@ -109,13 +138,20 @@ describe('DfspJWS', () => {
 
     // Wait for automatic rotation
     createdAt = Math.floor(Date.now() / 1000);
-    opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY AUTO', privateKey: 'JWS PRIVKEY AUTO', createdAt }));
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY AUTO',
+      privateKey: 'JWS PRIVKEY AUTO',
+      createdAt,
+    }));
 
     await waitFor(service, (state) => state.matches('creatingJWS.creating'), { timeout: 200 });
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     expect(opts.vault.createJWS).toHaveBeenCalledTimes(2);
-    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({ publicKey: 'JWS PUBKEY AUTO', createdAt });
+    expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({
+      publicKey: 'JWS PUBKEY AUTO',
+      createdAt,
+    });
     expect(configUpdate).toHaveBeenLastCalledWith({ jwsSigningKey: 'JWS PRIVKEY AUTO' });
 
     service.stop();
