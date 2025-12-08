@@ -17,6 +17,7 @@
     "GHSA-qhxp-v273-g94h", // sanitize-html
     "GHSA-rjqq-98f6-6j3r", // sanitize-html
     "GHSA-rm97-x556-q36h", // sanitize-html
-    "GHSA-v88g-cgmw-v5xw"  // ajv
+    "GHSA-v88g-cgmw-v5xw", // ajv
+    "GHSA-869p-cjfg-cm3x"  // @mojaloop/sdk-standard-components>jws
   ]
 }

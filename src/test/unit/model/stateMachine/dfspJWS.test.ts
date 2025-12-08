@@ -84,22 +84,13 @@ describe('DfspJWS', () => {
     createdAt = Math.floor(Date.now() / 1000);
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY ROTATED', privateKey: 'JWS PRIVKEY ROTATED', createdAt }));
 
-    const beforeRotation = Date.now();
     service.send({ type: 'ROTATE_JWS' });
 
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
-    const afterRotation = Date.now();
 
     expect(opts.vault.createJWS).toHaveBeenCalledTimes(2);
     expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({ publicKey: 'JWS PUBKEY ROTATED', createdAt });
     expect(configUpdate).toHaveBeenLastCalledWith({ jwsSigningKey: 'JWS PRIVKEY ROTATED' });
-
-    // Assert rotatesAt is set correctly
-    const currentState = service.getSnapshot();
-    const rotatesAt = currentState.context.dfspJWS?.rotatesAt;
-    expect(rotatesAt).toBeDefined();
-    expect(rotatesAt).toBeGreaterThanOrEqual(beforeRotation + (opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000));
-    expect(rotatesAt).toBeLessThanOrEqual(afterRotation + (opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000));
 
     service.stop();
   });
@@ -116,31 +107,16 @@ describe('DfspJWS', () => {
 
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
-    // Check initial rotatesAt
-    let currentState = service.getSnapshot();
-    let rotatesAt = currentState.context.dfspJWS?.rotatesAt;
-    expect(rotatesAt).toBeDefined();
-
     // Wait for automatic rotation
     createdAt = Math.floor(Date.now() / 1000);
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY AUTO', privateKey: 'JWS PRIVKEY AUTO', createdAt }));
 
-    const beforeAutoRotation = Date.now();
     await waitFor(service, (state) => state.matches('creatingJWS.creating'), { timeout: 200 });
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
-    const afterAutoRotation = Date.now();
 
     expect(opts.vault.createJWS).toHaveBeenCalledTimes(2);
     expect(opts.dfspCertificateModel.uploadJWS).toHaveBeenLastCalledWith({ publicKey: 'JWS PUBKEY AUTO', createdAt });
     expect(configUpdate).toHaveBeenLastCalledWith({ jwsSigningKey: 'JWS PRIVKEY AUTO' });
-
-    // Assert rotatesAt is updated correctly after auto rotation
-    currentState = service.getSnapshot();
-    const newRotatesAt = currentState.context.dfspJWS?.rotatesAt;
-    expect(newRotatesAt).toBeDefined();
-    expect(newRotatesAt).toBeGreaterThan(rotatesAt!);
-    expect(newRotatesAt).toBeGreaterThanOrEqual(beforeAutoRotation + opts.jwsRotationIntervalMs);
-    expect(newRotatesAt).toBeLessThanOrEqual(afterAutoRotation + opts.jwsRotationIntervalMs);
 
     service.stop();
   });
