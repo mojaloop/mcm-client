@@ -63,14 +63,11 @@ export namespace DfspJWS {
           {
             // Wait until rotatesAt, then transition to creating
             delay: (ctx: TContext) => {
-              if (ctx.dfspJWS) {
-                const now = Date.now();
-                const delayMs = ctx.dfspJWS.rotatesAt - now;
-                // If rotatesAt is in the past, rotate immediately
-                return Math.max(delayMs, 0);
-              }
-              // Fallback to default interval if no JWS exists
-              return opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000;
+              // ctx.dfspJWS is always defined in 'idle' state
+              const now = Date.now();
+              const delayMs = ctx.dfspJWS!.rotatesAt - now;
+              // If rotatesAt is in the past, rotate immediately
+              return Math.max(delayMs, 0);
             },
             target: 'creating'
           }
