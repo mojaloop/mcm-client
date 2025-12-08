@@ -439,7 +439,6 @@ export default class Vault {
     );
   }
 
-
   createCSR(csrParameters?: CsrParams) {
     const keys = forge.pki.rsa.generateKeyPair(this.cfg.keyLength);
     const csr = forge.pki.createCertificationRequest();
