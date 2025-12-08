@@ -108,7 +108,7 @@ describe('DfspJWS', () => {
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     // Wait for automatic rotation
-    createdAt = Date.now();
+    createdAt = Math.floor(Date.now() / 1000);
     opts.vault.createJWS.mockImplementation(() => ({ publicKey: 'JWS PUBKEY AUTO', privateKey: 'JWS PRIVKEY AUTO', createdAt }));
 
     await waitFor(service, (state) => state.matches('creatingJWS.creating'), { timeout: 200 });
