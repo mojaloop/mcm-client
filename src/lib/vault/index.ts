@@ -502,7 +502,7 @@ export default class Vault {
   /**
    * Performs a health check on the Vault server by sending a GET request to the `/sys/health` endpoint.
    *
-   * @returns {Promise<any>} The response from the Vault health endpoint if successful, or an object with `{ status: 'DOWN' }` if the request fails. A warning will be logged if the health check fails.
+   * @returns {Promise<any>} A promise that resolves with the response from the Vault health endpoint if successful, or an object with status 'DOWN' if the request fails. A warning will be logged if the health check fails.
    */
   async healthCheck() {
     assert(this.client);
