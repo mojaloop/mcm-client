@@ -19,6 +19,7 @@ jest.mock('../../../../lib/model');
 jest.mock('../../../../lib/ControlServer');
 
 export const createMachineOpts = () => {
+  const jwsRotationIntervalMs = 5 * 60 * 1000; // 5 minutes
   const vaultObj = new Vault({
     ...config.vault,
     commonName: config.mojaloopConnectorFQDN,
@@ -50,6 +51,7 @@ export const createMachineOpts = () => {
     vault,
     ControlServer: jest.mocked(ControlServer),
     certManager: undefined,
+    jwsRotationIntervalMs,
   };
 };
 

@@ -299,6 +299,22 @@ export default class Vault {
     });
   }
 
+  /**
+   * Issues a new DFSP server certificate using the provided CSR parameters.
+   *
+   * A server certificate is a digital certificate used to authenticate a server to clients,
+   * enabling secure encrypted communications (typically via TLS/SSL). It contains information
+   * about the server's identity and is signed by a trusted Certificate Authority (CA).
+   *
+   * This function sends a request to the Vault PKI backend to generate a server certificate,
+   * including support for Subject Alternative Names (SANs) such as DNS names and IP addresses.
+   * The function automatically handles token refresh before making the request.
+   *
+   * @param csrParameters - The parameters for the certificate signing request, including subject details and extensions.
+   * @returns An object containing the intermediate CA chain, root certificate, server certificate, private key, and expiration date.
+   *
+   * @throws Will throw an error if the Vault client is not initialized or if the request fails.
+   */
   async createDFSPServerCert(csrParameters: CsrParams) {
     return this._withTokenRefresh(async () => {
       const reqJson: Record<string, any> = {
@@ -337,6 +353,16 @@ export default class Vault {
   /**
    * Sign Hub CSR
    */
+  /**
+   * Signs a Certificate Signing Request (CSR) for the hub using the configured PKI role.
+   *
+   * This method sends a POST request to the Vault PKI endpoint to sign the provided CSR.
+   * The signed certificate is returned in the response data.
+   *
+   * @param csr - The PEM-encoded certificate signing request to be signed.
+   * @returns A promise that resolves with the signed certificate data from Vault.
+   * @throws If the Vault client is not initialized or if the signing request fails.
+   */
   async signHubCSR(csr: string) {
     return this._withTokenRefresh(async () => {
       assert(this.client);
@@ -359,6 +385,26 @@ export default class Vault {
     });
   }
 
+  /**
+   * Sets the DFSP CA certificate chain and private key in Vault.
+   *
+   * A CA certificate chain is a sequence of certificates, where each certificate in the chain is signed by the subsequent certificate,
+   * up to a trusted root certificate authority (CA). This chain allows clients to verify the authenticity of a
+   * certificate by tracing it back to a trusted root CA.
+   *
+   * This method posts the provided certificate chain and private key to the Vault PKI mount's CA configuration endpoint.
+   * The `pem_bundle` is constructed by concatenating the private key and certificate chain in PEM format.
+   *
+   * @param certChainPem - The PEM-encoded certificate chain to be stored.
+   * @param privateKeyPem - The PEM-encoded private key to be stored.
+   * @returns A promise that resolves when the request completes.
+   *
+   * @remarks
+   * - Requires a valid Vault client and configuration.
+   * - The Vault secret object documentation can be found at:
+   *   - {@link https://github.com/modusintegration/mojaloop-k3s-bootstrap/blob/e3578fc57a024a41023c61cd365f382027b922bd/docs/README-vault.md#vault-crd-secrets-integration}
+   *   - {@link https://vault.koudingspawn.de/supported-secret-types/secret-type-cert}
+   */
   async setDFSPCaCertChain(certChainPem: string, privateKeyPem: string) {
     return this._withTokenRefresh(async () => {
       assert(this.client);
@@ -392,6 +438,7 @@ export default class Vault {
       date < cert.validity.notAfter.getTime()
     );
   }
+
 
   createCSR(csrParameters?: CsrParams) {
     const keys = forge.pki.rsa.generateKeyPair(this.cfg.keyLength);
@@ -435,6 +482,18 @@ export default class Vault {
     };
   }
 
+  /**
+   * Generates a new RSA key pair and returns the public and private keys in PEM format,
+   * along with the creation timestamp.
+   *
+   * @returns An object containing:
+   * - `publicKey`: The RSA public key in PEM format.
+   * - `privateKey`: The RSA private key in PEM format.
+   * - `createdAt`: The Unix timestamp (in seconds) when the key pair was created.
+   *
+   * @remarks
+   * The key length is determined by the `keyLength` property in the configuration (`this.cfg.keyLength`).
+   */
   createJWS() {
     const keypair = forge.pki.rsa.generateKeyPair({ bits: this.cfg.keyLength });
     return {
@@ -444,6 +503,12 @@ export default class Vault {
     };
   }
 
+  /**
+   * Performs a health check on the Vault server by sending a GET request to the `/sys/health` endpoint.
+   *
+   * @returns {Promise<any>} The response from the Vault health endpoint if successful, or an object with `{ status: 'DOWN' }` if the request fails.
+   * @throws Will log a warning if the health check fails.
+   */
   async healthCheck() {
     assert(this.client);
     try {

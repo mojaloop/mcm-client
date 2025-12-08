@@ -18,6 +18,7 @@ export namespace DfspJWS {
       publicKey: string;
       privateKey: string;
       createdAt: number;
+      rotatesAt: number;
     };
   };
 
@@ -25,16 +26,22 @@ export namespace DfspJWS {
     | DoneEventObject
     | { type: 'CREATE_JWS' | 'DFSP_JWS_PROPAGATED' }
     | { type: 'CREATING_DFSP_JWS' }
-    | { type: 'UPLOADING_DFSP_JWS_TO_HUB' };
+    | { type: 'UPLOADING_DFSP_JWS_TO_HUB' }
+    | { type: 'ROTATE_JWS' };
 
   export const createState = <TContext extends Context>(opts: MachineOpts): MachineConfig<TContext, any, Event> => ({
     id: 'createJWS',
     initial: 'creating',
     on: {
       CREATE_JWS: { target: '.creating', internal: false },
+      ROTATE_JWS: { target: '.creating', internal: false },
     },
     states: {
-      idle: {},
+      idle: {
+        after: {
+          [opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000]: { target: 'creating' }
+        },
+      },
       creating: {
         entry: send('CREATING_DFSP_JWS'),
         invoke: {
@@ -51,7 +58,12 @@ export namespace DfspJWS {
           onDone: {
             target: 'uploadingToHub',
             actions: [
-              assign({ dfspJWS: (context, event) => event.data }),
+              assign({
+                dfspJWS: (context, event) => ({
+                  ...event.data,
+                  rotatesAt: Date.now() + (opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000)
+                })
+              }),
               send((ctx) => ({
                 type: 'UPDATE_CONNECTOR_CONFIG',
                 config: { jwsSigningKey: ctx.dfspJWS!.privateKey },
