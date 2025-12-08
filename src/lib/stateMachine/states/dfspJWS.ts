@@ -61,7 +61,7 @@ export namespace DfspJWS {
               assign({
                 dfspJWS: (context, event) => ({
                   ...event.data,
-                  rotatesAt: Date.now() + (opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000)
+                  jwsRotationIntervalMs: opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000,
                 })
               }),
               send((ctx) => ({
