@@ -24,14 +24,6 @@ import { invokeRetry } from './invokeRetry';
  * - `idle`: Waits for the rotation interval before transitioning to `creating`.
  * - `creating`: Handles JWS key creation and updates the context with new key data.
  * - `uploadingToHub`: Uploads the public key to the hub and signals propagation.
- *
- * @param opts - Options for configuring the state machine, including rotation interval,
- * logger, vault service, and certificate model.
- *
- * @type Context - The context object containing the current DFSP JWS key data.
- * @type Event - The union of possible events handled by the state machine.
- * @function createState - Returns the state machine configuration.
- *
  */
 export namespace DfspJWS {
   export type Context = {

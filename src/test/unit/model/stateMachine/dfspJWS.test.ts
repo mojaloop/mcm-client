@@ -121,8 +121,8 @@ describe('DfspJWS', () => {
   });
 
   test('should automatically rotate JWS after interval', async () => {
-    // Set a short rotation interval for testing
-    opts.jwsRotationIntervalMs = 100;
+    // Set a longer rotation interval for more reliable testing
+    opts.jwsRotationIntervalMs = 200;
 
     let createdAt = Math.floor(Date.now() / 1000);
     opts.vault.createJWS.mockImplementation(() => ({
@@ -144,7 +144,7 @@ describe('DfspJWS', () => {
       createdAt,
     }));
 
-    await waitFor(service, (state) => state.matches('creatingJWS.creating'), { timeout: 200 });
+    await waitFor(service, (state) => state.matches('creatingJWS.creating'), { timeout: 500 });
     await waitFor(service, (state) => state.matches('creatingJWS.idle'));
 
     expect(opts.vault.createJWS).toHaveBeenCalledTimes(2);

@@ -351,9 +351,6 @@ export default class Vault {
   }
 
   /**
-   * Sign Hub CSR
-   */
-  /**
    * Signs a Certificate Signing Request (CSR) for the hub using the configured PKI role.
    *
    * This method sends a POST request to the Vault PKI endpoint to sign the provided CSR.
