@@ -95,7 +95,7 @@ export namespace DfspJWS {
                   const createdAt = event.data.createdAt;
                   return {
                     ...event.data,
-                    rotatesAt: createdAt + jwsRotationIntervalMs,
+                    rotatesAt: (createdAt * 1000) + jwsRotationIntervalMs,
                   };
                 }
               }),
