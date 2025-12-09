@@ -29,4 +29,6 @@ export interface MachineOpts {
   port: number;
   config: any;
   certManager?: any;
+  jwsRotationIntervalMs?: number;
+  ignoreJwsRotationIntervalMin?: boolean;
 }
