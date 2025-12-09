@@ -42,86 +42,97 @@ export namespace DfspJWS {
     | { type: 'UPLOADING_DFSP_JWS_TO_HUB' }
     | { type: 'ROTATE_JWS' };
 
-  export const createState = <TContext extends Context>(opts: MachineOpts): MachineConfig<TContext, any, Event> => ({
-    id: 'createJWS',
-    initial: 'creating',
-    on: {
-      CREATE_JWS: { target: '.creating', internal: false },
-      ROTATE_JWS: { target: '.creating', internal: false },
-    },
-    states: {
-      idle: {
-        after: [
-          {
-            // Wait until rotatesAt, then transition to creating
-            delay: (ctx: TContext) => {
-              // ctx.dfspJWS is always defined in 'idle' state
-              const now = Date.now();
-              const delayMs = ctx.dfspJWS!.rotatesAt - now;
-              // If rotatesAt is in the past, rotate immediately
-              return Math.max(delayMs, 0);
-            },
-            target: 'creating'
-          }
-        ]
+  export const createState = <TContext extends Context>(opts: MachineOpts): MachineConfig<TContext, any, Event> => {
+    const MIN_JWS_ROTATION_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+    if (
+      opts.jwsRotationIntervalMs &&
+      opts.jwsRotationIntervalMs < MIN_JWS_ROTATION_INTERVAL_MS &&
+      !opts.ignoreJwsRotationIntervalMin // Add this flag to ignore minimum for testing
+    ) {
+      opts.logger?.warn?.(
+        `jwsRotationIntervalMs (${opts.jwsRotationIntervalMs}) too low, using minimum (${MIN_JWS_ROTATION_INTERVAL_MS}).`
+      );
+      opts.jwsRotationIntervalMs = MIN_JWS_ROTATION_INTERVAL_MS;
+    }
+
+    return {
+      id: 'createJWS',
+      initial: 'creating',
+      on: {
+        CREATE_JWS: { target: '.creating', internal: false },
+        ROTATE_JWS: { target: '.creating', internal: false },
       },
-      creating: {
-        entry: send('CREATING_DFSP_JWS'),
-        invoke: {
-          id: 'dfspJWSCreate',
-          src: () =>
-            invokeRetry({
-              id: 'dfspJWSCreate',
-              logger: opts.logger,
-              retryInterval: opts.refreshIntervalSeconds * 1000,
-              machine: 'DFSP_JWS',
-              state: 'creating',
-              service: async () => opts.vault.createJWS(),
-            }),
-          onDone: {
-            target: 'uploadingToHub',
-            actions: [
-              assign({
-                dfspJWS: (context, event) => {
-                  const jwsRotationIntervalMs = opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000;
-                  const createdAt = event.data.createdAt;
-                  return {
-                    ...event.data,
-                    rotatesAt: (createdAt * 1000) + jwsRotationIntervalMs,
-                  };
-                }
+      states: {
+        idle: {
+          after: [
+            {
+              delay: (ctx: TContext) => {
+                const now = Date.now();
+                const delayMs = ctx.dfspJWS!.rotatesAt - now;
+                return Math.max(delayMs, 0);
+              },
+              target: 'creating'
+            }
+          ]
+        },
+        creating: {
+          entry: send('CREATING_DFSP_JWS'),
+          invoke: {
+            id: 'dfspJWSCreate',
+            src: () =>
+              invokeRetry({
+                id: 'dfspJWSCreate',
+                logger: opts.logger,
+                retryInterval: opts.refreshIntervalSeconds * 1000,
+                machine: 'DFSP_JWS',
+                state: 'creating',
+                service: async () => opts.vault.createJWS(),
               }),
-              send((ctx) => ({
-                type: 'UPDATE_CONNECTOR_CONFIG',
-                config: { jwsSigningKey: ctx.dfspJWS!.privateKey },
-              })),
-            ],
-          },
-        },
-      },
-      uploadingToHub: {
-        entry: send('UPLOADING_DFSP_JWS_TO_HUB'),
-        invoke: {
-          id: 'dfspJWSUpload',
-          src: (ctx) =>
-            invokeRetry({
-              id: 'dfspJWSUpload',
-              logger: opts.logger,
-              retryInterval: opts.refreshIntervalSeconds * 1000,
-              machine: 'DFSP_JWS',
-              state: 'uploadingToHub',
-              service: async () =>
-                opts.dfspCertificateModel.uploadJWS({
-                  publicKey: ctx.dfspJWS!.publicKey,
-                  createdAt: ctx.dfspJWS!.createdAt,
+            onDone: {
+              target: 'uploadingToHub',
+              actions: [
+                assign({
+                  dfspJWS: (_context, event) => {
+                    const jwsRotationIntervalMs = opts.jwsRotationIntervalMs || 24 * 60 * 60 * 1000;
+                    const createdAt = event.data.createdAt;
+                    return {
+                      ...event.data,
+                      rotatesAt: (createdAt * 1000) + jwsRotationIntervalMs,
+                    };
+                  }
                 }),
-            }),
-          onDone: {
-            target: 'idle',
-            actions: send('DFSP_JWS_PROPAGATED'),
+                send((ctx) => ({
+                  type: 'UPDATE_CONNECTOR_CONFIG',
+                  config: { jwsSigningKey: ctx.dfspJWS!.privateKey },
+                })),
+              ],
+            },
+          },
+        },
+        uploadingToHub: {
+          entry: send('UPLOADING_DFSP_JWS_TO_HUB'),
+          invoke: {
+            id: 'dfspJWSUpload',
+            src: (ctx) =>
+              invokeRetry({
+                id: 'dfspJWSUpload',
+                logger: opts.logger,
+                retryInterval: opts.refreshIntervalSeconds * 1000,
+                machine: 'DFSP_JWS',
+                state: 'uploadingToHub',
+                service: async () =>
+                  opts.dfspCertificateModel.uploadJWS({
+                    publicKey: ctx.dfspJWS!.publicKey,
+                    createdAt: ctx.dfspJWS!.createdAt,
+                  }),
+              }),
+            onDone: {
+              target: 'idle',
+              actions: send('DFSP_JWS_PROPAGATED'),
+            },
           },
         },
       },
-    },
-  });
+    };
+  }
 }

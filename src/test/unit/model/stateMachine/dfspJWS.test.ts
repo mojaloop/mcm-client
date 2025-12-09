@@ -123,6 +123,7 @@ describe('DfspJWS', () => {
   test('should automatically rotate JWS after interval', async () => {
     // Set a longer rotation interval for more reliable testing
     opts.jwsRotationIntervalMs = 200;
+    opts.ignoreJwsRotationIntervalMin = true;
 
     let createdAt = Math.floor(Date.now() / 1000);
     opts.vault.createJWS.mockImplementation(() => ({
@@ -153,6 +154,38 @@ describe('DfspJWS', () => {
       createdAt,
     });
     expect(configUpdate).toHaveBeenLastCalledWith({ jwsSigningKey: 'JWS PRIVKEY AUTO' });
+
+    service.stop();
+  });
+
+  test('should enforce minimum JWS rotation interval', async () => {
+    // Set rotation interval below the minimum
+    opts.jwsRotationIntervalMs = 1000; // 1 second, below 30 minutes
+    const warnSpy = jest.fn();
+    opts.logger = { warn: warnSpy } as any;
+
+    const createdAt = Math.floor(Date.now() / 1000);
+    opts.vault.createJWS.mockImplementation(() => ({
+      publicKey: 'JWS PUBKEY',
+      privateKey: 'JWS PRIVKEY',
+      createdAt,
+    }));
+
+    const configUpdate = jest.fn();
+    const service = startMachine(opts, configUpdate);
+
+    await waitFor(service, (state) => state.matches('creatingJWS.idle'));
+
+    // Check that logger.warn was called with the minimum interval warning
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('jwsRotationIntervalMs (1000) too low, using minimum (1800000)')
+    );
+
+    // Check that rotatesAt is set to createdAt + MIN_JWS_ROTATION_INTERVAL_MS
+    const state = service.getSnapshot();
+    const dfspJWS = state.context.dfspJWS;
+    expect(dfspJWS).toBeDefined();
+    expect(dfspJWS!.rotatesAt).toBe((createdAt * 1000) + 1800000);
 
     service.stop();
   });
