@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+## [4.1.0](https://github.com/mojaloop/mcm-client/compare/v4.0.1...v4.1.0) (2025-12-09)
+
+
+### Features
+
+* add automatic fsp jws rotation ([#74](https://github.com/mojaloop/mcm-client/issues/74)) ([764e31f](https://github.com/mojaloop/mcm-client/commit/764e31fef29f7f5616956d28966ab51dadaab751))
+
 ### [4.0.1](https://github.com/mojaloop/mcm-client/compare/v4.0.0...v4.0.1) (2025-11-19)
 
 
