@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [4.1.1](https://github.com/mojaloop/mcm-client/compare/v4.1.0...v4.1.1) (2025-12-11)
+
+
+### Bug Fixes
+
+* pass kubernetesPath to fix node-vault 0.10.9 regression ([#76](https://github.com/mojaloop/mcm-client/issues/76)) ([a7ccff8](https://github.com/mojaloop/mcm-client/commit/a7ccff87ef3f40b9bc9c1c0828d4cf80a639710c))
+
 ## [4.1.0](https://github.com/mojaloop/mcm-client/compare/v4.0.1...v4.1.0) (2025-12-09)
 
 
