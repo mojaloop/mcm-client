@@ -149,6 +149,7 @@ export default class Vault {
         creds = await vault.kubernetesLogin({
           role: auth.k8s.role,
           jwt: auth.k8s.token,
+          kubernetesPath: 'kubernetes',
         });
       } else {
         const errMessage = 'Unsupported auth method';
