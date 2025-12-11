@@ -195,6 +195,7 @@ describe('Vault HTTP Keep-Alive Tests', () => {
         expect(mockVaultClient.kubernetesLogin).toHaveBeenCalledWith({
           role: 'k8s-role',
           jwt: 'k8s-token',
+          kubernetesPath: 'kubernetes',
         });
 
         expect(NodeVault).toHaveBeenNthCalledWith(1, {
