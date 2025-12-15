@@ -192,4 +192,32 @@ describe('DfspClientCert', () => {
 
     expect(guards.isDfspClientCertExpiring(ctx, event)).toBe(false);
   });
+
+  test('should assign notBefore and expireTime when certInfo contains both fields', async () => {
+    opts.vault.createCSR.mockImplementation(() => ({ csr: 'DFSP CSR', privateKey: 'PKEY' }));
+    opts.dfspCertificateModel.uploadCSR.mockImplementation(async () => ({ id: 321 }));
+    const notBefore = new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(); // 1 day ago
+    const notAfter = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30).toISOString(); // 30 days from now
+    opts.dfspCertificateModel.getClientCertificate.mockImplementation(async () => ({
+      certificate: 'DFSP CERT 4',
+      state: 'CERT_SIGNED',
+      certInfo: {
+        notBefore,
+        notAfter,
+      },
+    }));
+    const configUpdate = jest.fn();
+    opts.refreshIntervalSeconds = 1;
+    const service = startMachine(opts, configUpdate);
+
+    await waitFor(service, (state) => state.matches('creatingDfspClientCert.retry'));
+
+    const state = service.getSnapshot();
+    // @ts-ignore
+    const cert = state.context.dfspClientCert;
+    expect(cert?.notBefore).toBe(notBefore);
+    expect(cert?.notAfter).toBe(notAfter);
+
+    service.stop();
+  });
 });
