@@ -19,6 +19,9 @@ export namespace DfspClientCert {
       csr?: string;
       cert?: string;
       privateKey?: string;
+      expireTime?: string;
+      notBefore?: string;
+      notAfter?: string;
     };
   }
 
@@ -110,6 +113,8 @@ export namespace DfspClientCert {
                   dfspClientCert: (context, { data }): any => ({
                     ...context.dfspClientCert,
                     cert: data.certificate,
+                    notAfter: data.certInfo?.notAfter,
+                    notBefore: data.certInfo?.notBefore,
                   }),
                 }),
                 send((ctx) => ({
