@@ -16,8 +16,7 @@ This single file contains everything needed to understand the project:
 - Links to all detailed documentation
 
 **For quick code navigation:**
-→ [`_cc/docs/13-ai-navigation.md`](./_cc/docs/13-ai-navigation.md) - Entry points, call chains, side effects
-
+→ [`_cc/docs/12-ai-guide.md`](./_cc/docs/12-ai-guide.md) - Entry points, call chains, side effects
 
 ## Project Overview
 
