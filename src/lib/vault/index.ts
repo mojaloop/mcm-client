@@ -83,6 +83,7 @@ type VaultLoginResult = { // https://developer.hashicorp.com/vault/api-docs/auth
 }
 
 const MAX_TIMEOUT = Math.pow(2, 31) / 2 - 1; // https://developer.mozilla.org/en-US/docs/Web/API/setTimeout#maximum_delay_value
+const MIN_TOKEN_REFRESH_MS = 30_000; // 30s floor to prevent rapid reconnection loops
 
 // Enable HTTP keep-alive by default for connection pooling (reduces TCP overhead)
 // Can be disabled by setting VAULT_HTTP_KEEP_ALIVE=false
@@ -166,11 +167,16 @@ export default class Vault {
       // Only clear the timer if vault has been connected successfully
       if (this.reconnectTimer) clearTimeout(this.reconnectTimer);
 
-      const tokenRefreshMs = Math.min((creds.auth.lease_duration - 30) * 1000, MAX_TIMEOUT);
+      const rawRefreshMs = (creds.auth.lease_duration - 30) * 1000;
+      const tokenRefreshMs = Math.max(MIN_TOKEN_REFRESH_MS, Math.min(rawRefreshMs, MAX_TIMEOUT));
       this.reconnectTimer = setTimeout(this.connect.bind(this), tokenRefreshMs);
 
+      if (creds.auth.lease_duration < 300) {
+        this.logger.warn(`Vault lease_duration is unexpectedly short: ${creds.auth.lease_duration}s`);
+      }
+
       this.logger.info(
-        `Connected to Vault  [reconnect after: ${tokenRefreshMs} ms]`, { endpoint }
+        `Connected to Vault  [lease_duration: ${creds.auth.lease_duration}s, reconnect after: ${tokenRefreshMs} ms]`, { endpoint }
       );
     } catch (err) {
       this.logger.child({ endpoint, rpDefaults }).error(`error in vault.connect(): `, err);
@@ -501,18 +507,20 @@ export default class Vault {
   }
 
   /**
-   * Performs a health check on the Vault server by sending a GET request to the `/sys/health` endpoint.
+   * Performs a health check on the Vault server using the built-in node-vault health method.
+   * Inspects the response for sealed/uninitialized states since node-vault resolves
+   * (rather than rejects) non-200 /sys/health responses.
    *
-   * @returns {Promise<any>} A promise that resolves with the response from the Vault health endpoint if successful, or an object with status 'DOWN' if the request fails. A warning will be logged if the health check fails.
+   * @returns {Promise<{status: 'OK'} | {status: 'DOWN'}>} OK if Vault is active, initialized, and unsealed; DOWN otherwise.
    */
   async healthCheck() {
     assert(this.client);
     try {
-      const response = await this.client.request({
-        path: '/sys/health',
-        method: 'GET',
-      });
-      return response;
+      const response = await this.client.health();
+      this.logger.debug('Vault health check response: ', { response });
+      if (response?.sealed) throw new Error('Vault is sealed');
+      if (response?.initialized === false) throw new Error('Vault is not initialized');
+      return { status: 'OK' };
     } catch (err: unknown) {
       this.logger.warn('Vault health check failed: ', err);
       return { status: 'DOWN' };
