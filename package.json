@@ -18,13 +18,8 @@
   "files": [
     "dist"
   ],
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run lint & npm run build & npm test",
-      "pre-push": "npm run dep:check & npm run audit:check"
-    }
-  },
   "scripts": {
+    "prepare": "husky || true",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "audit:check": "npx audit-ci --config ./audit-ci.jsonc",
@@ -69,7 +64,7 @@
     "eslint": "^8.2.0",
     "eslint-config-airbnb-base": "^15.0.0",
     "eslint-plugin-import": "^2.32.0",
-    "hasky": "^3.0.2",
+    "husky": "^9.1.7",
     "jest": "^29.7.0",
     "jest-junit": "^16.0.0",
     "mockdate": "^3.0.5",
