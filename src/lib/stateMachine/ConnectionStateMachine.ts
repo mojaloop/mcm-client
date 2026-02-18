@@ -167,9 +167,7 @@ class ConnectionStateMachine {
       const reason = state
         ? 'state machine changed'
         : 'no previous state found';
-      this.opts.logger.info(
-        `Starting state machine from scratch because ${reason}`,
-      );
+      this.opts.logger.info(`Starting state machine from scratch because ${reason}`);
       this.service.start();
     }
 
