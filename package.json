@@ -19,7 +19,6 @@
     "dist"
   ],
   "scripts": {
-    "prepare": "husky || true",
     "lint": "eslint src",
     "lint:fix": "eslint src --fix",
     "audit:check": "npx audit-ci --config ./audit-ci.jsonc",
@@ -33,10 +32,11 @@
     "test:integration": "echo 'No integration tests defined'",
     "release": "npx standard-version --no-verify --releaseCommitMessageFormat 'chore(release): {{currentTag}} [skip ci]'",
     "snapshot": "npx standard-version --no-verify --skip.changelog --prerelease snapshot --releaseCommitMessageFormat 'ci(snapshot): {{currentTag}}'",
-    "prepublishOnly": "tsc",
     "dep:check": "npx ncu --target semver -e 2",
     "dep:update": "npx ncu --target semver -u",
-    "build": "tsc"
+    "build": "tsc",
+    "prepublishOnly": "tsc",
+    "prepare": "husky || true"
   },
   "dependencies": {
     "@mojaloop/sdk-standard-components": "^19.18.7",
@@ -73,5 +73,11 @@
     "openapi-response-validator": "^12.1.3",
     "ts-jest": "29.4.5",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "axios": ">=1.13.5",
+    "qs": ">=6.14.1",
+    "lodash": "$lodash",
+    "lodash-es": ">=4.17.23"
   }
 }
