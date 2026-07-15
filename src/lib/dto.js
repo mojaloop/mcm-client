@@ -8,12 +8,10 @@ const makeErrMessage = (validateFn) => JSON.stringify(validateFn.errors.map((e) 
 const oidcPayloadSchema = {
     type: 'object',
     properties: {
-        client_id: { type: 'string' },
-        client_secret: { type: 'string' },
         grant_type: { type: 'string' },
         scope: { type: 'string' },
     },
-    required: ['client_id', 'client_secret', 'grant_type'],
+    required: ['grant_type'],
     additionalProperties: false,
 };
 const validateOidcPayload = ajv.compile(oidcPayloadSchema);
@@ -21,20 +19,16 @@ const validateOidcPayload = ajv.compile(oidcPayloadSchema);
 const oidcRefreshPayloadSchema = {
     type: 'object',
     properties: {
-        client_id: { type: 'string' },
-        client_secret: { type: 'string' },
         grant_type: { type: 'string' },
         refresh_token: { type: 'string' },
     },
-    required: ['client_id', 'grant_type', 'refresh_token'],
+    required: ['grant_type', 'refresh_token'],
     additionalProperties: false,
 };
 const validateOidcRefreshPayload = ajv.compile(oidcRefreshPayloadSchema);
 
-const oidcPayloadDto = (auth, grantType, scope) => {
+const oidcPayloadDto = (grantType, scope) => {
     const dto = {
-        client_id: auth.creds?.clientId,
-        client_secret: auth.creds?.clientSecret,
         grant_type: grantType, // todo: add possible values check
         ...(scope ? { scope } : null),
     };
@@ -48,13 +42,10 @@ const oidcPayloadDto = (auth, grantType, scope) => {
     return Object.freeze(dto);
 };
 
-const oidcRefreshPayloadDto = (auth, refreshToken) => {
+const oidcRefreshPayloadDto = (refreshToken) => {
     const dto = {
-        client_id: auth.creds?.clientId,
         grant_type: 'refresh_token',
         refresh_token: refreshToken,
-        // Include client_secret if available (for confidential clients)
-        ...(auth.creds?.clientSecret ? { client_secret: auth.creds.clientSecret } : {}),
     };
 
     const isValid = validateOidcRefreshPayload(dto);

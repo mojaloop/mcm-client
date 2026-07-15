@@ -4,7 +4,9 @@ const { request } = require('@mojaloop/sdk-standard-components');
 
 const { ERROR_MESSAGES, OIDC_TOKEN_ROUTE, OIDC_GRANT_TYPE } = require('../constants');
 const { oidcPayloadDto, oidcRefreshPayloadDto } = require('../dto');
-const { buildUrl, defineAgent, makeFormUrlEncodedHeaders } = require('./common');
+const {
+    buildUrl, defineAgent, makeFormUrlEncodedHeaders, makeBasicAuthHeader,
+} = require('./common');
 
 class JWTSingleton {
     constructor(opts) {
@@ -35,9 +37,9 @@ class JWTSingleton {
             return;
         }
         const route = this._oidcTokenRoute;
-        const headers = makeFormUrlEncodedHeaders();
+        const headers = this._tokenRequestHeaders();
 
-        const payload = oidcPayloadDto(this._auth, this._oidcGrantType, this._oidcScope);
+        const payload = oidcPayloadDto(this._oidcGrantType, this._oidcScope);
         const postData = querystring.stringify(payload);
 
         this.token = await this.post(route, postData, headers);
@@ -49,6 +51,14 @@ class JWTSingleton {
 
     getToken() {
         return this.token;
+    }
+
+    _tokenRequestHeaders() {
+        const { clientId, clientSecret } = this._auth.creds || {};
+        return {
+            ...makeFormUrlEncodedHeaders(),
+            Authorization: makeBasicAuthHeader(clientId, clientSecret),
+        };
     }
 
     async refreshAccessToken() {
@@ -64,9 +74,9 @@ class JWTSingleton {
 
         try {
             const route = this._oidcTokenRoute;
-            const headers = makeFormUrlEncodedHeaders();
+            const headers = this._tokenRequestHeaders();
 
-            const payload = oidcRefreshPayloadDto(this._auth, this._refreshToken);
+            const payload = oidcRefreshPayloadDto(this._refreshToken);
             const postData = querystring.stringify(payload);
 
             this._logger.info('Refreshing access token...');
