@@ -442,14 +442,13 @@ export default class Vault {
     const csr = forge.pki.createCertificationRequest();
     csr.publicKey = keys.publicKey;
 
-    if (csrParameters?.subject) {
-      csr.setSubject(
-        Object.entries(csrParameters.subject).map(([shortName, value]) => ({
-          shortName,
-          value,
-        })),
-      );
-    }
+    const subject = csrParameters?.subject ?? { CN: this.cfg.commonName };
+    csr.setSubject(
+      Object.entries(subject).map(([shortName, value]) => ({
+        shortName,
+        value,
+      })),
+    );
 
     if (csrParameters?.extensions?.subjectAltName) {
       const { dns, ips } = csrParameters.extensions.subjectAltName;
