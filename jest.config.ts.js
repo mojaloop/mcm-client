@@ -23,12 +23,17 @@ const config = {
         resolveJsonModule: true,
         skipLibCheck: true
       }
+    }],
+    // serialize-error/non-error are ESM-only; transform them to CommonJS for the runner
+    '^.+\\.js$': ['ts-jest', {
+      isolatedModules: true,
+      diagnostics: false,
+      tsconfig: { allowJs: true, module: 'CommonJS', esModuleInterop: true, moduleResolution: 'node', skipLibCheck: true }
     }]
   },
 
-  // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
   transformIgnorePatterns: [
-    "/node_modules/",
+    "/node_modules/(?!(serialize-error|non-error)/)",
   ],
 };
 
