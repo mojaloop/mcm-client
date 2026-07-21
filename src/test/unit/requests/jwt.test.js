@@ -1,4 +1,4 @@
-const { JWTSingleton } = require('../../../lib/requests/jwt');
+const { JWTClient } = require('../../../lib/requests/jwt');
 const { ERROR_MESSAGES } = require('../../../lib/constants');
 const mocks = require('../mocks');
 
@@ -9,11 +9,11 @@ jest.mock('@mojaloop/sdk-standard-components', () => ({
     request: jest.fn(async () => mockResponse),
 }));
 
-describe('JWTSingleton Tests -->', () => {
+describe('JWTClient Tests -->', () => {
     let jwt;
 
     beforeAll(() => {
-        jwt = new JWTSingleton(mocks.mockJwtOptions());
+        jwt = new JWTClient(mocks.mockJwtOptions());
         expect(jwt.getToken()).toBeUndefined();
     });
 
@@ -21,9 +21,9 @@ describe('JWTSingleton Tests -->', () => {
         jwt.destroy();
     });
 
-    test('should return the same instance', () => {
-        const newJwt = new JWTSingleton();
-        expect(newJwt).toEqual(jwt);
+    test('should throw if oidcTokenRoute is not configured', () => {
+        expect(() => new JWTClient({ ...mocks.mockJwtOptions(), oidcTokenRoute: undefined }))
+            .toThrowError(ERROR_MESSAGES.loginErrorNoTokenRoute);
     });
 
     test('should get access token', async () => {
@@ -53,8 +53,6 @@ describe('JWTSingleton Tests -->', () => {
         let refreshJwt;
 
         beforeEach(() => {
-            // Clear singleton instance for fresh test
-            JWTSingleton.instance = null;
             jest.useFakeTimers();
         });
 
@@ -66,7 +64,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should refresh token manually using refreshAccessToken', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Mock initial login response with refresh token
             mockResponse = mocks.mockOidcHttpResponse({
@@ -92,7 +90,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should fall back to login when refresh token is not available', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Initial login without refresh token
             mockResponse = mocks.mockOidcHttpResponse({
@@ -109,7 +107,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should fall back to login when refresh token request fails', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Mock initial login response with refresh token
             mockResponse = mocks.mockOidcHttpResponse({
@@ -140,14 +138,14 @@ describe('JWTSingleton Tests -->', () => {
             const disabledAuthOptions = mocks.mockJwtOptions({
                 auth: { ...mocks.mockAuth(), enabled: false },
             });
-            refreshJwt = new JWTSingleton(disabledAuthOptions);
+            refreshJwt = new JWTClient(disabledAuthOptions);
 
             const result = await refreshJwt.refreshAccessToken();
             expect(result).toBeNull();
         });
 
         test('should check if token is expired correctly', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Test with no expiry time set
             expect(refreshJwt.isTokenExpired()).toBe(true);
@@ -175,7 +173,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should schedule token refresh correctly', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Mock login response
             mockResponse = mocks.mockOidcHttpResponse({
@@ -196,7 +194,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should clear timeouts on destroy', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Mock login response
             mockResponse = mocks.mockOidcHttpResponse({
@@ -228,7 +226,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should not schedule refresh when no token lifetime available', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Mock login response without expires_in
             mockResponse = mocks.mockOidcHttpResponse({
@@ -248,7 +246,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should clear existing timeout before scheduling new one', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // First login
             mockResponse = mocks.mockOidcHttpResponse({
@@ -278,7 +276,7 @@ describe('JWTSingleton Tests -->', () => {
         });
 
         test('should handle invalid expires_in values gracefully', async () => {
-            refreshJwt = new JWTSingleton(mocks.mockJwtOptions());
+            refreshJwt = new JWTClient(mocks.mockJwtOptions());
 
             // Test with string expires_in
             mockResponse = mocks.mockOidcHttpResponse({

@@ -10,6 +10,7 @@ const oidcPayloadSchema = {
     properties: {
         grant_type: { type: 'string' },
         scope: { type: 'string' },
+        audience: { type: 'string' },
     },
     required: ['grant_type'],
     additionalProperties: false,
@@ -27,10 +28,11 @@ const oidcRefreshPayloadSchema = {
 };
 const validateOidcRefreshPayload = ajv.compile(oidcRefreshPayloadSchema);
 
-const oidcPayloadDto = (grantType, scope) => {
+const oidcPayloadDto = (grantType, scope, audience) => {
     const dto = {
         grant_type: grantType, // todo: add possible values check
         ...(scope ? { scope } : null),
+        ...(audience ? { audience } : null),
     };
 
     const isValid = validateOidcPayload(dto);

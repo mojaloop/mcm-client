@@ -19,6 +19,7 @@ class DFSPEndpointModel {
         this._hubRequest = new Requests({
             logger: opts.logger,
             hubEndpoint: opts.hubEndpoint,
+            auth: opts.auth,
         });
     }
 

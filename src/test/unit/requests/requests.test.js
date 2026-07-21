@@ -1,7 +1,7 @@
 const sdkSC = require('@mojaloop/sdk-standard-components');
 
 const { Requests } = require('../../../lib/requests');
-const { JWTSingleton } = require('../../../lib/requests/jwt');
+const { JWTClient } = require('../../../lib/requests/jwt');
 const { makeJsonHeaders } = require('../../../lib/requests/common');
 const constants = require('../../../lib/constants');
 const mocks = require('../mocks');
@@ -26,7 +26,7 @@ describe('Requests Tests -->', () => {
     let jwt;
 
     beforeAll(() => {
-        jwt = new JWTSingleton(mocks.mockJwtOptions());
+        jwt = new JWTClient(mocks.mockJwtOptions());
     });
 
     afterEach(() => {
@@ -63,7 +63,7 @@ describe('Requests Tests -->', () => {
         });
 
         test('should do login call only in case of 401 or 403 errors', async () => {
-            const r = new Requests(mocks.mockModelOptions());
+            const r = new Requests(mocks.mockModelOptions({ auth: jwt }));
 
             const loginSpy = jest.spyOn(jwt, 'login');
             const initCalls = loginSpy.mock.calls.length;

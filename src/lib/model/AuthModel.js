@@ -11,25 +11,32 @@
  *       Jose Sanchez - jose.sanchez@modusbox.com                   *
  ************************************************************************* */
 
-const { JWTSingleton } = require('../requests/jwt');
+const { JWTClient } = require('../requests/jwt');
 
 class AuthModel {
     constructor(opts) {
         this._storage = opts.storage;
-        this._logger = opts.logger;
-        this._auth = opts.auth;
-        this._hubIamProviderUrl = opts.hubIamProviderUrl;
-        this._oidcScope = opts.oidcScope;
+        this._jwt = new JWTClient({
+            auth: opts.auth,
+            logger: opts.logger,
+            hubIamProviderUrl: opts.hubIamProviderUrl,
+            oidcTokenRoute: opts.oidcTokenRoute,
+            oidcGrantType: opts.oidcGrantType,
+            oidcScope: opts.oidcScope,
+            oidcAudience: opts.oidcAudience,
+        });
     }
 
     async login() {
-        const JWT = new JWTSingleton({
-            auth: this._auth,
-            logger: this._logger,
-            hubIamProviderUrl: this._hubIamProviderUrl,
-            oidcScope: this._oidcScope,
-        });
-        await JWT.login();
+        await this._jwt.login();
+    }
+
+    getToken() {
+        return this._jwt.getToken();
+    }
+
+    destroy() {
+        this._jwt.destroy();
     }
 }
 

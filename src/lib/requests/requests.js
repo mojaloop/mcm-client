@@ -15,7 +15,6 @@ const retry = require('async-retry');
 const stringify = require('safe-stable-stringify')
 const { request } = require('@mojaloop/sdk-standard-components');
 const { AUTH_HEADER, DEFAULT_RETRIES_COUNT } = require('../constants');
-const { JWTSingleton } = require('./jwt');
 const {
     buildUrl, throwOrJson, makeJsonHeaders, HTTPResponseError, defineAgent,
 } = require('./common');
@@ -30,6 +29,7 @@ class Requests {
         this.logger = config.logger;
         this.retries = config.retries ?? DEFAULT_RETRIES_COUNT;
         this.additionalHeaders = config.additionalHeaders;
+        this.auth = config.auth;
         // Switch or peer DFSP endpoint
         this.hubEndpoint = config.hubEndpoint;
 
@@ -42,8 +42,7 @@ class Requests {
      * @returns {object} - headers object for use in requests to mojaloop api endpoints
      */
     _buildHeaders() {
-        const JWT = new JWTSingleton();
-        const token = JWT.getToken();
+        const token = this.auth?.getToken();
 
         const headers = makeJsonHeaders();
 
@@ -97,8 +96,7 @@ class Requests {
                 this.logger.error(`Error attempting HTTP ${method} statusCode: ${statusCode}`, error);
                 if ([401, 403].includes(statusCode)) {
                     this.logger.info(`Retrying login due to error statusCode: ${statusCode}`);
-                    const JWT = new JWTSingleton();
-                    await JWT.login();
+                    await this.auth?.login();
                 }
                 throw error;
             }

@@ -12,5 +12,14 @@ describe('DTO Tests -->', () => {
             expect(() => dto.oidcPayloadDto({}))
                 .toThrowError(ERROR_MESSAGES.oidcPayloadFormatError);
         });
+
+        test('should include audience when provided', () => {
+            const data = dto.oidcPayloadDto('grantType', 'scope', 'connection-manager-api');
+            expect(data.audience).toBe('connection-manager-api');
+        });
+
+        test('should omit audience when not provided', () => {
+            expect(dto.oidcPayloadDto('grantType')).not.toHaveProperty('audience');
+        });
     });
 });

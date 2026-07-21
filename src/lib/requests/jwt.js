@@ -1,4 +1,4 @@
-/* eslint-disable no-constructor-return, import/no-extraneous-dependencies */
+/* eslint-disable import/no-extraneous-dependencies */
 const querystring = require('querystring');
 const { request } = require('@mojaloop/sdk-standard-components');
 
@@ -8,28 +8,30 @@ const {
     buildUrl, defineAgent, makeFormUrlEncodedHeaders, makeBasicAuthHeader,
 } = require('./common');
 
-class JWTSingleton {
+class JWTClient {
     constructor(opts) {
-        if (JWTSingleton.instance) {
-            return JWTSingleton.instance;
-        }
-
         this._logger = opts.logger.child({ component: this.constructor.name });
 
         this._auth = opts.auth;
         if (opts.auth.enabled) {
-            this._hubIamProviderUrl = opts.hubIamProviderUrl;
+            const { clientId, clientSecret } = opts.auth.creds || {};
+            if (!clientId || !clientSecret) {
+                throw new Error(ERROR_MESSAGES.loginErrorNoCredentials);
+            }
+
             this._oidcTokenRoute = opts.oidcTokenRoute || OIDC_TOKEN_ROUTE;
+            if (!this._oidcTokenRoute) {
+                throw new Error(ERROR_MESSAGES.loginErrorNoTokenRoute);
+            }
+
+            this._hubIamProviderUrl = opts.hubIamProviderUrl;
             this._oidcGrantType = opts.oidcGrantType || OIDC_GRANT_TYPE;
             this._oidcScope = opts.oidcScope; // e.g. 'email profile'
+            this._oidcAudience = opts.oidcAudience;
             this._tokenRefreshTimeout = null;
 
             this.agent = defineAgent(this._hubIamProviderUrl);
         }
-
-        JWTSingleton.instance = this;
-
-        return this;
     }
 
     async login() {
@@ -39,7 +41,7 @@ class JWTSingleton {
         const route = this._oidcTokenRoute;
         const headers = this._tokenRequestHeaders();
 
-        const payload = oidcPayloadDto(this._oidcGrantType, this._oidcScope);
+        const payload = oidcPayloadDto(this._oidcGrantType, this._oidcScope, this._oidcAudience);
         const postData = querystring.stringify(payload);
 
         this.token = await this.post(route, postData, headers);
@@ -54,7 +56,7 @@ class JWTSingleton {
     }
 
     _tokenRequestHeaders() {
-        const { clientId, clientSecret } = this._auth.creds || {};
+        const { clientId, clientSecret } = this._auth.creds;
         return {
             ...makeFormUrlEncodedHeaders(),
             Authorization: makeBasicAuthHeader(clientId, clientSecret),
@@ -192,5 +194,5 @@ class JWTSingleton {
 }
 
 module.exports = {
-    JWTSingleton,
+    JWTClient,
 };
