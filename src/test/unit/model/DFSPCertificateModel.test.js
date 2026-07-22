@@ -60,6 +60,6 @@ describe('DFSPCertificateModel Tests -->', () => {
             hubEndpoint: 'hubEndpoint.com',
         });
         expect(() => new DFSPCertificateModel(options))
-            .toThrowError(ERROR_MESSAGES.noProtocolInUrl);
+            .toThrow(ERROR_MESSAGES.noProtocolInUrl);
     });
 });

@@ -10,7 +10,7 @@ describe('DTO Tests -->', () => {
 
         test('should throw on wrong format', () => {
             expect(() => dto.oidcPayloadDto({}))
-                .toThrowError(ERROR_MESSAGES.oidcPayloadFormatError);
+                .toThrow(ERROR_MESSAGES.oidcPayloadFormatError);
         });
 
         test('should include audience when provided', () => {

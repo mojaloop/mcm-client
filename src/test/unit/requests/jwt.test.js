@@ -23,7 +23,7 @@ describe('JWTClient Tests -->', () => {
 
     test('should throw if oidcTokenRoute is not configured', () => {
         expect(() => new JWTClient({ ...mocks.mockJwtOptions(), oidcTokenRoute: undefined }))
-            .toThrowError(ERROR_MESSAGES.loginErrorNoTokenRoute);
+            .toThrow(ERROR_MESSAGES.loginErrorNoTokenRoute);
     });
 
     test('should get access token', async () => {
@@ -38,7 +38,7 @@ describe('JWTClient Tests -->', () => {
             data: {},
         });
         await expect(() => jwt.login())
-            .rejects.toThrowError(ERROR_MESSAGES.loginErrorNoToken);
+            .rejects.toThrow(ERROR_MESSAGES.loginErrorNoToken);
     });
 
     test('should throw error if response has wrong statusCode', async () => {
@@ -46,7 +46,7 @@ describe('JWTClient Tests -->', () => {
             statusCode: 204,
         });
         await expect(() => jwt.login())
-            .rejects.toThrowError(ERROR_MESSAGES.loginErrorInvalidStatusCode);
+            .rejects.toThrow(ERROR_MESSAGES.loginErrorInvalidStatusCode);
     });
 
     describe('Token Refresh Tests', () => {

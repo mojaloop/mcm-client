@@ -5,6 +5,7 @@
   "high": true,
   "critical": true,
   "allowlist": [
+    "GHSA-v245-v573-v5vm", // linkify-it, no fix compatible with markdown-it's ^5
     "GHSA-282f-qqgm-c34q", // jsonpointer
     "GHSA-6vfc-qv3f-vr6c", // markdown-it
     "GHSA-7fh5-64p2-3v2j", // postcss
