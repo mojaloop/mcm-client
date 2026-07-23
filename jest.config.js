@@ -49,10 +49,16 @@ const config = {
   // The test environment that will be used for testing
   testEnvironment: "jest-environment-node",
 
-  // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
+  // serialize-error/non-error are ESM-only; transform them to CommonJS for the runner
+  transform: {
+    "^.+\\.js$": ["ts-jest", {
+      isolatedModules: true,
+      diagnostics: false,
+      tsconfig: { allowJs: true, module: "CommonJS", esModuleInterop: true, moduleResolution: "node" },
+    }],
+  },
   transformIgnorePatterns: [
-    "/node_modules/",
-    // "\\.pnp\\.[^\\/]+$"
+    "/node_modules/(?!(serialize-error|non-error)/)",
   ],
 
 };

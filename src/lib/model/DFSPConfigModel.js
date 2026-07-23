@@ -19,6 +19,7 @@ class DFSPConfigModel {
         this._mcmServerRequest = new Requests({
             logger: opts.logger,
             hubEndpoint: opts.hubEndpoint,
+            auth: opts.auth,
         });
     }
 

@@ -98,6 +98,12 @@ const makeHeaders = (contentType) => {
 const makeJsonHeaders = () => makeHeaders(CONTENT_TYPES.json);
 const makeFormUrlEncodedHeaders = () => makeHeaders(CONTENT_TYPES.formUrlEncoded);
 
+// RFC 6749 2.3.1 client_secret_basic: the URL-encoded client id and secret,
+// base64-encoded as "id:secret", carried in the Authorization header
+const makeBasicAuthHeader = (clientId, clientSecret) => `Basic ${Buffer.from(
+    `${encodeURIComponent(clientId)}:${encodeURIComponent(clientSecret)}`,
+).toString('base64')}`;
+
 module.exports = {
     HTTPResponseError,
     buildUrl,
@@ -105,4 +111,5 @@ module.exports = {
     defineAgent,
     makeJsonHeaders,
     makeFormUrlEncodedHeaders,
+    makeBasicAuthHeader,
 };

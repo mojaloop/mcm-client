@@ -14,12 +14,16 @@ const mockAuth = ({
     },
 });
 
-const mockJwtOptions = ({
+const mockAuthOptions = ({
     auth = mockAuth(),
     hubIamProviderUrl = 'https://hubIamProviderUrl.com',
+    oidcTokenRoute = 'oauth2/token',
+    oidcAudience,
 } = {}) => Object.freeze({
     auth,
     hubIamProviderUrl,
+    oidcTokenRoute,
+    oidcAudience,
     logger: new Logger.SdkLogger({}),
 });
 
@@ -27,10 +31,12 @@ const mockModelOptions = ({
     dfspId = 'dfspId',
     hubEndpoint = 'http://hubEndpoint.com',
     retries,
+    auth,
 } = {}) => Object.freeze({
     dfspId,
     hubEndpoint,
     retries,
+    auth,
     logger: new Logger.SdkLogger(),
 });
 
@@ -94,7 +100,7 @@ const mockErrorHttpResponse = ({
 
 module.exports = {
     mockAuth,
-    mockJwtOptions,
+    mockAuthOptions,
     mockModelOptions,
     mockOidcData,
     mockOidcHttpResponse,

@@ -1,3 +1,6 @@
 reject: [
   "eslint", ## npm install fails if eslint is upgraded because eslint-config-airbnb-base uses old version of eslint
+  "typescript", ## ts-jest 29 peer-requires typescript <7; hold at 5.9 until ts-jest supports 7
+  "xstate", ## v5 drops interpret() and retypes createMachine across the 26 state machine files - needs its own migration story
+  "@xstate/inspect", ## removed in xstate v5, so it stays pinned to the xstate 4 line
 ]

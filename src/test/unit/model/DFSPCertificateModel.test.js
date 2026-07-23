@@ -1,5 +1,4 @@
 const { DFSPCertificateModel, AuthModel } = require('../../../lib/model');
-const { JWTSingleton } = require('../../../lib/requests/jwt');
 const { AUTH_HEADER, CONTENT_TYPES, ERROR_MESSAGES } = require('../../../lib/constants');
 const mocks = require('../mocks');
 
@@ -13,23 +12,26 @@ const sdkSC = require('@mojaloop/sdk-standard-components');
 
 describe('DFSPCertificateModel Tests -->', () => {
     let token;
+    let auth;
 
     beforeAll(async () => {
         sdkSC.request.mockImplementation(async () => mocks.mockOidcHttpResponse());
 
-        const options = mocks.mockJwtOptions();
-        const jwt = new JWTSingleton(options);
-        expect(jwt.getToken()).toBeUndefined();
+        auth = new AuthModel(mocks.mockAuthOptions());
+        expect(auth.getToken()).toBeUndefined();
 
-        const authModel = new AuthModel(options);
-        await authModel.login();
+        await auth.login();
 
-        token = jwt.getToken();
+        token = auth.getToken();
         expect(token).toBe(mocks.mockOidcData().access_token);
     });
 
+    afterAll(() => {
+        auth.destroy();
+    });
+
     test('should use access token as Authorization-header to do further calls to hub', async () => {
-        const model = new DFSPCertificateModel(mocks.mockModelOptions());
+        const model = new DFSPCertificateModel(mocks.mockModelOptions({ auth }));
         await model.getDFSPCA();
 
         expect(sdkSC.request).toHaveBeenCalledTimes(2);
@@ -45,7 +47,7 @@ describe('DFSPCertificateModel Tests -->', () => {
     test('should call external-dfsps endpiont on uploadExternalDfspJWS', async () => {
         sdkSC.request.mockImplementation(async () => mocks.mockUploadExternalDfspJWSHttpResponse());
 
-        const model = new DFSPCertificateModel(mocks.mockModelOptions());
+        const model = new DFSPCertificateModel(mocks.mockModelOptions({ auth }));
         await model.uploadExternalDfspJWS(mocks.mockUploadExternalDfspJWSData());
 
         expect(sdkSC.request).toHaveBeenCalledTimes(3);
@@ -58,6 +60,6 @@ describe('DFSPCertificateModel Tests -->', () => {
             hubEndpoint: 'hubEndpoint.com',
         });
         expect(() => new DFSPCertificateModel(options))
-            .toThrowError(ERROR_MESSAGES.noProtocolInUrl);
+            .toThrow(ERROR_MESSAGES.noProtocolInUrl);
     });
 });

@@ -1,0 +1,6 @@
+{
+  "exceptions": {
+    "oer-utils@5.1.2": { "reason": "Apache-2.0 per bundled LICENSE (JS Foundation / Ripple); no license field on the npm release", "expires": "2027-06-30" },
+    "tv4@1.3.0": { "reason": "Public domain per bundled LICENSE; no license field on the npm release", "expires": "2027-06-30" }
+  }
+}
