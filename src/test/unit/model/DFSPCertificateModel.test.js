@@ -17,7 +17,7 @@ describe('DFSPCertificateModel Tests -->', () => {
     beforeAll(async () => {
         sdkSC.request.mockImplementation(async () => mocks.mockOidcHttpResponse());
 
-        auth = new AuthModel(mocks.mockJwtOptions());
+        auth = new AuthModel(mocks.mockAuthOptions());
         expect(auth.getToken()).toBeUndefined();
 
         await auth.login();

@@ -1,7 +1,7 @@
 const sdkSC = require('@mojaloop/sdk-standard-components');
 
 const { Requests } = require('../../../lib/requests');
-const { JWTClient } = require('../../../lib/requests/jwt');
+const AuthModel = require('../../../lib/model/AuthModel');
 const { makeJsonHeaders } = require('../../../lib/requests/common');
 const constants = require('../../../lib/constants');
 const mocks = require('../mocks');
@@ -23,10 +23,10 @@ jest.mock('@mojaloop/sdk-standard-components', () => ({
 jest.setTimeout(30 * 1000);
 
 describe('Requests Tests -->', () => {
-    let jwt;
+    let auth;
 
     beforeAll(() => {
-        jwt = new JWTClient(mocks.mockJwtOptions());
+        auth = new AuthModel(mocks.mockAuthOptions());
     });
 
     afterEach(() => {
@@ -63,9 +63,9 @@ describe('Requests Tests -->', () => {
         });
 
         test('should do login call only in case of 401 or 403 errors', async () => {
-            const r = new Requests(mocks.mockModelOptions({ auth: jwt }));
+            const r = new Requests(mocks.mockModelOptions({ auth }));
 
-            const loginSpy = jest.spyOn(jwt, 'login');
+            const loginSpy = jest.spyOn(auth, 'login');
             const initCalls = loginSpy.mock.calls.length;
 
             mockResponse = mocks.mockOidcHttpResponse({ statusCode: 400 });

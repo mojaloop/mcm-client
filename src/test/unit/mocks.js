@@ -14,7 +14,7 @@ const mockAuth = ({
     },
 });
 
-const mockJwtOptions = ({
+const mockAuthOptions = ({
     auth = mockAuth(),
     hubIamProviderUrl = 'https://hubIamProviderUrl.com',
     oidcTokenRoute = 'oauth2/token',
@@ -100,7 +100,7 @@ const mockErrorHttpResponse = ({
 
 module.exports = {
     mockAuth,
-    mockJwtOptions,
+    mockAuthOptions,
     mockModelOptions,
     mockOidcData,
     mockOidcHttpResponse,

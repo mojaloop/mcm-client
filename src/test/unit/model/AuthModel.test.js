@@ -1,4 +1,4 @@
-const { JWTClient } = require('../../../lib/requests/jwt');
+const AuthModel = require('../../../lib/model/AuthModel');
 const { ERROR_MESSAGES } = require('../../../lib/constants');
 const mocks = require('../mocks');
 
@@ -9,35 +9,35 @@ jest.mock('@mojaloop/sdk-standard-components', () => ({
     request: jest.fn(async () => mockResponse),
 }));
 
-describe('JWTClient Tests -->', () => {
-    let jwt;
+describe('AuthModel Tests -->', () => {
+    let auth;
 
     beforeAll(() => {
-        jwt = new JWTClient(mocks.mockJwtOptions());
-        expect(jwt.getToken()).toBeUndefined();
+        auth = new AuthModel(mocks.mockAuthOptions());
+        expect(auth.getToken()).toBeUndefined();
     });
 
     afterAll(() => {
-        jwt.destroy();
+        auth.destroy();
     });
 
     test('should throw if oidcTokenRoute is not configured', () => {
-        expect(() => new JWTClient({ ...mocks.mockJwtOptions(), oidcTokenRoute: undefined }))
+        expect(() => new AuthModel({ ...mocks.mockAuthOptions(), oidcTokenRoute: undefined }))
             .toThrow(ERROR_MESSAGES.loginErrorNoTokenRoute);
     });
 
     test('should get access token', async () => {
         mockResponse = mocks.mockOidcHttpResponse();
-        expect(jwt.getToken()).toBeUndefined();
-        await jwt.login();
-        expect(jwt.getToken()).toBe(mocks.mockOidcData().access_token);
+        expect(auth.getToken()).toBeUndefined();
+        await auth.login();
+        expect(auth.getToken()).toBe(mocks.mockOidcData().access_token);
     });
 
     test('should throw error if no access token in response', async () => {
         mockResponse = mocks.mockOidcHttpResponse({
             data: {},
         });
-        await expect(() => jwt.login())
+        await expect(() => auth.login())
             .rejects.toThrow(ERROR_MESSAGES.loginErrorNoToken);
     });
 
@@ -45,26 +45,26 @@ describe('JWTClient Tests -->', () => {
         mockResponse = mocks.mockOidcHttpResponse({
             statusCode: 204,
         });
-        await expect(() => jwt.login())
+        await expect(() => auth.login())
             .rejects.toThrow(ERROR_MESSAGES.loginErrorInvalidStatusCode);
     });
 
     describe('Token Refresh Tests', () => {
-        let refreshJwt;
+        let refreshAuth;
 
         beforeEach(() => {
             jest.useFakeTimers();
         });
 
         afterEach(() => {
-            if (refreshJwt) {
-                refreshJwt.destroy();
+            if (refreshAuth) {
+                refreshAuth.destroy();
             }
             jest.useRealTimers();
         });
 
         test('should refresh token manually using refreshAccessToken', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Mock initial login response with refresh token
             mockResponse = mocks.mockOidcHttpResponse({
@@ -73,7 +73,7 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'refresh.token.value',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
             // Mock refresh token response
             mockResponse = mocks.mockOidcHttpResponse({
@@ -84,13 +84,13 @@ describe('JWTClient Tests -->', () => {
                 },
             });
 
-            const newToken = await refreshJwt.refreshAccessToken();
+            const newToken = await refreshAuth.refreshAccessToken();
             expect(newToken).toBe('refreshed.access.token');
-            expect(refreshJwt.token).toBe('refreshed.access.token');
+            expect(refreshAuth.token).toBe('refreshed.access.token');
         });
 
         test('should fall back to login when refresh token is not available', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Initial login without refresh token
             mockResponse = mocks.mockOidcHttpResponse({
@@ -99,15 +99,15 @@ describe('JWTClient Tests -->', () => {
                     // No refresh_token in response
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
             // Since there's no refresh token, refreshAccessToken should return null
-            await refreshJwt.refreshAccessToken();
-            expect(refreshJwt.token).toBe('fake.access.token');
+            await refreshAuth.refreshAccessToken();
+            expect(refreshAuth.token).toBe('fake.access.token');
         });
 
         test('should fall back to login when refresh token request fails', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Mock initial login response with refresh token
             mockResponse = mocks.mockOidcHttpResponse({
@@ -116,7 +116,7 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'invalid.refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
             // Mock failed refresh response
             mockResponse = mocks.mockOidcHttpResponse({
@@ -125,9 +125,9 @@ describe('JWTClient Tests -->', () => {
             });
 
             // Mock successful login fallback
-            const loginSpy = jest.spyOn(refreshJwt, 'login').mockResolvedValue('fallback.token');
+            const loginSpy = jest.spyOn(refreshAuth, 'login').mockResolvedValue('fallback.token');
 
-            const result = await refreshJwt.refreshAccessToken();
+            const result = await refreshAuth.refreshAccessToken();
             expect(loginSpy).toHaveBeenCalled();
             expect(result).toBe('fallback.token');
 
@@ -135,22 +135,22 @@ describe('JWTClient Tests -->', () => {
         });
 
         test('should return null when auth is disabled for refresh', async () => {
-            const disabledAuthOptions = mocks.mockJwtOptions({
+            const disabledAuthOptions = mocks.mockAuthOptions({
                 auth: { ...mocks.mockAuth(), enabled: false },
             });
-            refreshJwt = new JWTClient(disabledAuthOptions);
+            refreshAuth = new AuthModel(disabledAuthOptions);
 
-            const result = await refreshJwt.refreshAccessToken();
+            const result = await refreshAuth.refreshAccessToken();
             expect(result).toBeNull();
         });
 
         test('should check if token is expired correctly', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Test with no expiry time set
-            expect(refreshJwt.isTokenExpired()).toBe(true);
-            expect(refreshJwt.getTokenExpiryInfo().isExpired).toBe(true);
-            expect(refreshJwt.getTokenExpiryInfo().expiresAt).toBeNull();
+            expect(refreshAuth.isTokenExpired()).toBe(true);
+            expect(refreshAuth.getTokenExpiryInfo().isExpired).toBe(true);
+            expect(refreshAuth.getTokenExpiryInfo().expiresAt).toBeNull();
 
             // Mock login to set token expiry
             mockResponse = mocks.mockOidcHttpResponse({
@@ -159,21 +159,21 @@ describe('JWTClient Tests -->', () => {
                     expires_in: 60, // 1 minute
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
             // Token should not be expired immediately after login
-            expect(refreshJwt.isTokenExpired()).toBe(false);
-            expect(refreshJwt.getTokenExpiryInfo().isExpired).toBe(false);
-            expect(refreshJwt.getTokenExpiryInfo().lifeTime).toBe(60);
-            expect(refreshJwt.getTokenExpiryInfo().expiresAt).toBeGreaterThan(Date.now());
+            expect(refreshAuth.isTokenExpired()).toBe(false);
+            expect(refreshAuth.getTokenExpiryInfo().isExpired).toBe(false);
+            expect(refreshAuth.getTokenExpiryInfo().lifeTime).toBe(60);
+            expect(refreshAuth.getTokenExpiryInfo().expiresAt).toBeGreaterThan(Date.now());
 
             // Test with buffer seconds
-            expect(refreshJwt.isTokenExpired(65)).toBe(true); // Should be expired with 65s buffer
-            expect(refreshJwt.isTokenExpired(1)).toBe(false); // Should not expire with 1s buffer
+            expect(refreshAuth.isTokenExpired(65)).toBe(true); // Should be expired with 65s buffer
+            expect(refreshAuth.isTokenExpired(1)).toBe(false); // Should not expire with 1s buffer
         });
 
         test('should schedule token refresh correctly', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Mock login response
             mockResponse = mocks.mockOidcHttpResponse({
@@ -183,18 +183,18 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            expect(refreshJwt._tokenRefreshTimeout).toBeTruthy();
+            expect(refreshAuth._tokenRefreshTimeout).toBeTruthy();
 
-            const expiryInfo = refreshJwt.getTokenExpiryInfo();
+            const expiryInfo = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfo.lifeTime).toBe(300);
             expect(expiryInfo.hasRefreshToken).toBe(true);
             expect(expiryInfo.expiresAt).toBeGreaterThan(Date.now());
         });
 
         test('should clear timeouts on destroy', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Mock login response
             mockResponse = mocks.mockOidcHttpResponse({
@@ -203,22 +203,22 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            expect(refreshJwt._tokenRefreshTimeout).toBeTruthy();
-            expect(refreshJwt.token).toBeTruthy();
+            expect(refreshAuth._tokenRefreshTimeout).toBeTruthy();
+            expect(refreshAuth.token).toBeTruthy();
 
-            const expiryInfoBefore = refreshJwt.getTokenExpiryInfo();
+            const expiryInfoBefore = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfoBefore.hasRefreshToken).toBe(true);
             expect(expiryInfoBefore.lifeTime).toBeTruthy();
             expect(expiryInfoBefore.expiresAt).toBeTruthy();
 
-            refreshJwt.destroy();
+            refreshAuth.destroy();
 
-            expect(refreshJwt._tokenRefreshTimeout).toBeNull();
-            expect(refreshJwt.token).toBeNull();
+            expect(refreshAuth._tokenRefreshTimeout).toBeNull();
+            expect(refreshAuth.token).toBeNull();
 
-            const expiryInfoAfter = refreshJwt.getTokenExpiryInfo();
+            const expiryInfoAfter = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfoAfter.hasRefreshToken).toBe(false);
             expect(expiryInfoAfter.lifeTime).toBeUndefined();
             expect(expiryInfoAfter.expiresAt).toBeNull();
@@ -226,7 +226,7 @@ describe('JWTClient Tests -->', () => {
         });
 
         test('should not schedule refresh when no token lifetime available', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Mock login response without expires_in
             mockResponse = mocks.mockOidcHttpResponse({
@@ -235,18 +235,18 @@ describe('JWTClient Tests -->', () => {
                     // No expires_in field
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            expect(refreshJwt._tokenRefreshTimeout).toBeNull();
+            expect(refreshAuth._tokenRefreshTimeout).toBeNull();
 
-            const expiryInfo = refreshJwt.getTokenExpiryInfo();
+            const expiryInfo = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfo.lifeTime).toBeUndefined();
             expect(expiryInfo.expiresAt).toBeNull();
             expect(expiryInfo.isExpired).toBe(true);
         });
 
         test('should clear existing timeout before scheduling new one', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // First login
             mockResponse = mocks.mockOidcHttpResponse({
@@ -255,9 +255,9 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'first.refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            const firstTimeout = refreshJwt._tokenRefreshTimeout;
+            const firstTimeout = refreshAuth._tokenRefreshTimeout;
             expect(firstTimeout).toBeTruthy();
 
             // Second login should clear the first timeout
@@ -268,15 +268,15 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'second.refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            const secondTimeout = refreshJwt._tokenRefreshTimeout;
+            const secondTimeout = refreshAuth._tokenRefreshTimeout;
             expect(secondTimeout).toBeTruthy();
             expect(secondTimeout).not.toBe(firstTimeout);
         });
 
         test('should handle invalid expires_in values gracefully', async () => {
-            refreshJwt = new JWTClient(mocks.mockJwtOptions());
+            refreshAuth = new AuthModel(mocks.mockAuthOptions());
 
             // Test with string expires_in
             mockResponse = mocks.mockOidcHttpResponse({
@@ -286,9 +286,9 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            let expiryInfo = refreshJwt.getTokenExpiryInfo();
+            let expiryInfo = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfo.expiresAt).toBeNull();
             expect(expiryInfo.lifeTime).toBe('300'); // Stored as-is
             // Should be expired when _tokenExpiresAt is null
@@ -302,9 +302,9 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            expiryInfo = refreshJwt.getTokenExpiryInfo();
+            expiryInfo = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfo.expiresAt).toBeNull();
             expect(expiryInfo.lifeTime).toBe(-100);
             expect(expiryInfo.isExpired).toBe(true);
@@ -317,9 +317,9 @@ describe('JWTClient Tests -->', () => {
                     refresh_token: 'refresh.token',
                 },
             });
-            await refreshJwt.login();
+            await refreshAuth.login();
 
-            expiryInfo = refreshJwt.getTokenExpiryInfo();
+            expiryInfo = refreshAuth.getTokenExpiryInfo();
             expect(expiryInfo.expiresAt).toBeNull();
             expect(expiryInfo.lifeTime).toBeUndefined();
             expect(expiryInfo.isExpired).toBe(true);
